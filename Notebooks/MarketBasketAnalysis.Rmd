@@ -1,0 +1,193 @@
+---
+---
+---
+
+#Lets import the necessary libraries
+
+```{r}
+library(arules)
+library(arulesViz)
+library(tidyverse)
+library(ggplot2)
+library(corrplot)
+library(plyr)
+library(RColorBrewer)
+library(plotly)
+```
+
+#Lets import the data
+
+```{r}
+data <- read.csv("/home/owekitiibwa/Desktop/dataAnalysis/Pandas-Data-Science-Tasks/all_data.csv")
+```
+
+#Data Cleaning
+
+```{r}
+#Checking for missing values
+any(is.na(data))
+
+
+```
+
+Get the count of missing values in each column
+
+```{r}
+missing_counts <- colSums(is.na(data))
+missing_counts
+```
+
+deleting all null values
+
+```{r}
+data <- na.omit(data)
+```
+
+Checking for duplicate values
+
+```{r}
+any(duplicated(data))
+```
+
+Removing duplicate data using the unique function
+
+```{r}
+data <- unique(data)
+```
+
+#Performing Exploratory data Analysis
+
+Structure of the data
+
+```{r}
+str(data)
+```
+
+Descriptive Statistics of the data
+
+```{r}
+summary(data)
+```
+
+Converting columns to numeric columns
+
+```{r}
+data$Price.Each <- as.numeric(data$Price.Each)
+data$Quantity.Ordered <- as.integer(data$Quantity.Ordered)
+```
+
+Drawing histograms for the numeric variables in the dataset
+
+```{r}
+  ggplot(data,aes(x= Price.Each  )) +
+  geom_histogram(binwidth = 30) 
+```
+
+```{r}
+ggplot(data,aes(x= Quantity.Ordered  )) +
+    geom_histogram(binwidth = 0.5)
+```
+
+Drawing the density plots for the numeric variables, First for Price.Each
+
+```{r}
+ggplot(data,aes(x= Price.Each  )) + geom_density() 
+```
+
+Density Plot for Quantity Ordered
+
+```{r}
+
+  ggplot(data,aes(x= Quantity.Ordered  )) + geom_density()  
+```
+
+```{}
+```
+
+Data Preparation for Market Basket Analysis
+
+```{r}
+transactionData <- ddply(data,c("Order.ID","Order.Date"),
+                         function(df1)paste(df1$Product,
+                                            collapse = ","))
+```
+
+Viewing the transaction data
+
+```{r}
+head(transactionData)
+```
+
+This format for transaction data is called the basket format. Next, you have to store this transaction data into a .csv (Comma Separated Values) file. For this, write.csv()
+
+```{r}
+write.csv(transactionData,"/home/owekitiibwa/Desktop/dataAnalysis/Pandas-Data-Science-Tasks/transaction_data.csv", quote = FALSE, row.names = FALSE)
+```
+
+loading this transaction data into an object of the transaction class using read.transactions
+
+```{r}
+transactions <- read.transactions("/home/owekitiibwa/Desktop/dataAnalysis/Pandas-Data-Science-Tasks/transaction_data.csv", format = 'basket', sep=',')
+```
+
+Viewing the transaction object
+
+```{r}
+transactions
+```
+
+Summary of the transactions
+
+```{r}
+summary(transactions)
+```
+
+Drawing an Absolute Item Frequency Plot
+
+```{r}
+itemFrequencyPlot(transactions,topN=21,type="absolute",col=brewer.pal(8,'Pastel2'), main=" Absolute Product Frequency Plot")
+```
+
+Drawing an Relative Frequency Plot
+
+```{r}
+itemFrequencyPlot(transactions,topN=21,type="relative",col=brewer.pal(8,'Pastel2'), main=" Relative Product Frequency Plot")
+```
+
+#Generating Rules! Next step is to mine the rules using the APRIORI algorithm. The function apriori() is from package arules.
+
+```{r}
+association_rules <- apriori(transactions, parameter = list(supp=0.0001, conf=0.4,maxlen=10))
+```
+
+#Inspecting the rules Lets print number of rules
+
+```{r}
+
+print(association_rules)
+```
+
+Displaying the rules
+
+```{r}
+inspect(association_rules)
+```
+
+#Lets Visualize the Rules
+
+```{r}
+plot(association_rules)
+```
+
+Lets create a two key plot
+
+```{r}
+plot(association_rules,method="two-key plot")
+```
+
+Graph-Based Visualizations for association rules
+
+```{r}
+top10subRules <- head(association_rules, by = "confidence")
+plot(top10subRules, method = "graph",  engine = "htmlwidget")
+```
